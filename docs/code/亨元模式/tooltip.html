@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+</head>
+
+<body>
+  <script>
+    const toolTipFactory = (function () {
+      const toolTipPool = [];
+      return {
+        create() {
+          if (toolTipPool.length === 0) {
+            const div = document.createElement('div');
+            document.body.appendChild(div);
+            return div;
+          }
+          return toolTipPool.shift();
+        },
+        recover(toolTip) {
+          toolTipPool.push(toolTip);
+        },
+      };
+    })();
+
+    // 开始绘制
+    const str = ['A', 'B'];
+    const ary = [];
+    for (let i = 0; i < str.length; i += 1) {
+      const text = str[i];
+      const toolTip = toolTipFactory.create();
+      toolTip.innerHTML = text;
+      ary.push(toolTip);
+    }
+
+    // 重新绘制
+    for (let i = 0; i < ary.length; i++) {
+      const el = ary[i];
+      // 回收回对象池
+      toolTip.recover(el);
+    }
+  </script>
+</body>
+
+</html>

@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+</head>
+
+<body>
+  <script>
+    const FSM = {
+      weak: {
+        buttonWasPressed: function () {
+          console.log('强光');
+          this.currentState = this.strong;
+        },
+      },
+      strong: {
+        buttonWasPressed: function () {
+          console.log('关灯');
+          this.currentState = this.off;
+        },
+      },
+      off: {
+        buttonWasPressed: function () {
+          console.log('弱光');
+          this.currentState = this.weak;
+        },
+      }
+    }
+    const delegate = function (client, delegation) {
+      return {
+        buttonWasPressed: function (...args) {
+          delegation.buttonWasPressed.apply(this, args);
+        }
+      }
+    }
+    class Light {
+      constructor() {
+        this.off = delegate(this, FSM.off);
+        this.weak = delegate(this, FSM.weak);
+        this.strong = delegate(this, FSM.strong);
+        this.currentState = this.off;
+        this.button = null;
+      }
+      init() {
+        const button = document.createElement('button');
+        this.button = document.body.appendChild(button)
+        this.button.innerHTML = '开关';
+        this.button.addEventListener('click', () => {
+          this.currentState.buttonWasPressed.call(this);
+        })
+      }
+    }
+    const light = new Light();
+    light.init();
+  </script>
+</body>
+
+</html>

@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+</head>
+
+<body>
+  <script>
+    const plugin = (function () {
+      const plugin = document.createElement('embed');
+      plugin.style.display = 'none';
+      plugin.type = 'application/txftn-webkit';
+      plugin.sign = function () {
+        console.log('开始扫描');
+      }
+      plugin.pause = function () {
+        console.log('暂停');
+      }
+      plugin.uploading = function () {
+        console.log('正在上传');
+      }
+      plugin.del = function () {
+        console.log('删除');
+      }
+      plugin.done = function () {
+        console.log('上传完成');
+      }
+      document.body.appendChild(plugin);
+      return plugin;
+    })()
+
+    class Upload {
+      constructor(fileName) {
+        this.fileName = fileName;
+        this.plugin = plugin;
+        this.button1 = null;
+        this.button2 = null;
+        this.signState = new SignState(this);
+        this.pauseState = new PauseState(this);
+        this.uploadingState = new UploadingState(this);
+        this.doneState = new DoneState(this);
+        this.errorState = new ErrorState(this);
+        this.currentState = this.signState;
+      }
+      init() {
+        this.dom = document.createElement('div');
+        this.dom.innerHTML = `
+        <span>文件名称${this.fileName}</span>\
+        <button data-action="button1">扫描中</button>\
+        <button data-action="button2">删除</button>
+        `
+        document.body.appendChild(this.dom);
+        this.button1 = this.dom.querySelector('[data-action="button1"]');
+        this.button2 = this.dom.querySelector('[data-action="button2"]');
+        this.bindEvent();
+      }
+      bindEvent() {
+        this.button1.addEventListener('click', () => {
+          this.currentState.clickHandler1();
+        })
+        this.button2.addEventListener('click', () => {
+          this.currentState.clickHandler2();
+        })
+      }
+      // 把状态对应的逻辑放在类中
+      sign() {
+        this.plugin.sign();
+        this.currentState = this.signState;
+      }
+      pause() {
+        this.button1.innerHTML = '已暂停，继续上传';
+        this.plugin.pause();
+        this.currentState = this.pauseState;
+      }
+      uploading() {
+        this.button1.innerHTML = '正在上传';
+        this.plugin.uploading();
+        this.currentState = this.uploadingState;
+      }
+      done() {
+        this.button1.innerHTML = '已上传';
+        this.plugin.done();
+        this.currentState = this.doneState;
+      }
+      error() {
+        this.button1.innerHTML = '上传失败';
+        this.plugin.error();
+        this.currentState = this.errorState;
+      }
+      del() {
+        this.plugin.del();
+        this.dom.parentNode.removeChild(this.dom);
+      }
+    }
+    class State {
+      clickHandler1() {
+        throw new Error('子类必须实现点击事件');
+      }
+      clickHandler2() {
+        throw new Error('子类必须实现点击事件');
+      }
+    }
+    class SignState extends State {
+      constructor(upload) {
+        super();
+        this.upload = upload;
+      }
+      clickHandler1() {
+        console.log('扫描中，点击无效');
+      }
+      clickHandler2() {
+        console.log('文件正在上传中，不能删除');
+      }
+    }
+    class PauseState extends State {
+      constructor(upload) {
+        super();
+        this.upload = upload;
+      }
+      clickHandler1() {
+        this.upload.uploading();
+      }
+      clickHandler2() {
+        this.upload.del();
+      }
+    }
+    class UploadingState extends State {
+      constructor(upload) {
+        super();
+        this.upload = upload;
+      }
+      clickHandler1() {
+        this.upload.pause();
+      }
+      clickHandler2() {
+        console.log('文件正在上传中，不能删除');
+      }
+    }
+    class DoneState extends State {
+      constructor(upload) {
+        super();
+        this.upload = upload;
+      }
+      clickHandler1() {
+        console.log('文件已上传，点击无效');
+      }
+      clickHandler2() {
+        this.upload.del();
+      }
+    }
+    class ErrorState extends State {
+      constructor(upload) {
+        super();
+        this.upload = upload;
+      }
+      clickHandler1() {
+        console.log('文件上传失败，点击无效');
+      }
+      clickHandler2() {
+        this.upload.del();
+      }
+    }
+    const upload = new Upload('JavaScript.pdf');
+    upload.init();
+    window.external.upload = function (state) {
+      upload[state]();
+    }
+    window.external.upload('sign');
+    setTimeout(() => {
+      window.external.upload('uploading');
+    }, 2000)
+    setTimeout(() => {
+      window.external.upload('done');
+    }, 4000)
+  </script>
+</body>
+
+</html>
